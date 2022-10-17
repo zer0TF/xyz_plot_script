@@ -40,6 +40,8 @@ Right-click on any image to copy the full info prompt to your clipboard (so you 
   * No, the images are only located in the `/xyz/` folder, and they are named specifically so that the web viewer can read and display them properly.
 * **What order does the script process the dimensions in?**
   * Z, Y, X. (If you have Checkpoint as a dimension, place it on Z or Y, not X.)
+* **Can I use this on Colab?**
+  * I have no idea. Good luck!
 * **How come you used background images instead of `<img>` tags?**
   * CSS is hard, okay?
 * **Why did you use Vue.js?**
