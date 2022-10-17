@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+    <title>X/Y/Z Plot Image Viewer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type="text/css">
+
+        :root
+        {
+            --label-col-width: 220px;
+            --label-row-height: 50px;
+        }
+
+        html, body
+        {
+            margin: 0;
+            padding: 0;
+            font-size: 10px;
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #333;
+            color: #EEE;
+            overflow: hidden;
+        }
+
+        body
+        {
+            height: 100vh;
+            width: 100vw;
+            font-size: 1.4rem;
+        }
+
+        [v-cloak] {
+            display: none !important;
+        }
+
+        #m .page
+        {
+            display: flex;
+            flex-flow: column nowrap;
+            align-items: stretch;
+
+            height: 100vh;
+            width: 100vw;
+            max-height: 100vh;
+            max-width: 100vw;
+            min-height: 100vh;
+            min-width: 100vw;
+        }
+
+        #m .page .header
+        {
+            display: flex;
+            flex-flow: row nowrap;
+            align-items: center;
+            align-content: center;
+            justify-content: center;
+            height: var(--label-row-height);
+        }
+        
+        #m .page .header .x-label.empty
+        {
+            width: var(--label-col-width);
+            min-width: var(--label-col-width);
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #555;
+        }
+
+        #m .page .header .x-label
+        {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #444;
+            width: calc(calc(100vw - var(--label-col-width)) / 2); /* !!! */
+        }
+
+        #m .page .header .x-label .label
+        {
+            flex: 1;
+            text-align: center;
+        }
+
+        #m .page .header .x-label .page-indicators
+        {
+            flex: 0;
+            width: 30px;
+            min-width: 30px;
+            height: 100%;
+            padding: 5px;
+            box-sizing: border-box;
+            display: flex;
+            flex-flow: column nowrap;
+            align-items: stretch;
+            justify-content: space-evenly;
+        }
+
+        #m .page .header .x-label .indicator
+        {
+            width: 100%;
+            height: 100%;
+            background-color: #111;
+            padding: 2px;
+            box-sizing: border-box;
+            border-radius: 2px;
+        }
+
+        #m .page .header .x-label .indicator.active
+        {
+            background-color: #45dd4d;
+        }
+
+        #m .page .header .x-label .indicator:not(:last-child)
+        {
+            margin-bottom: 3px;
+        }
+
+        #m .page .rows
+        {
+            display: flex;
+            flex-flow: column nowrap;
+            align-items: stretch;
+            height: calc(100vh - var(--label-row-height));
+        }
+
+        #m .page .row
+        {
+            display: flex;
+            flex-flow: row nowrap;
+            align-items: center;
+            align-content: center;
+            justify-content: center;
+            height: calc(calc(100vh - var(--label-row-height)) / 2); /* !!! */
+        }
+
+        #m .page .row .col
+        {
+            position: relative;
+            
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            width: calc(calc(100vw - var(--label-col-width)) / 2); /* !!! */
+            background-position: 50% 50%;
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+
+        #m .page .row .col:hover
+        {
+            filter: brightness(1.3);
+            cursor: pointer;
+        }
+
+        #m .page .row .y-label
+        {
+            height: 100%;
+            display: flex;
+            padding-right: 1rem;
+            box-sizing: border-box;
+            align-items: center;
+            justify-content: flex-end;
+            background-color: #444;
+            width: var(--label-col-width);
+            min-width: var(--label-col-width);
+        }
+        
+
+        #m img
+        {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+    </style>
+
+</head>
+<body>
+
+    <div id="m">
+        <p v-show="false" style="text-align: center; font-size: 3rem;">Loading images...</p>
+        <div class="page" v-for="z, iz in images" v-show="iz == pageIndex" v-on:wheel="scrollHandler" v-cloak>
+            <div class="header">
+                <div class="x-label empty">
+                    <div class="page-indicators">
+                        <div class="indicator" v-for="_, pi in images" v-bind:class="{'active': pi == pageIndex}"></div>
+                    </div>
+                    <div class="label">
+                        {{ z_labels[iz] }}
+                    </div>
+                </div>
+                <div class="x-label" v-for="xl in x_labels" v-bind:style="{'width': 'calc(calc(100vw - var(--label-col-width)) / ' + images[0].length + ')'}">
+                        {{ xl }}
+                </div>
+            </div>
+            <div class="rows">
+                <div class="row" v-for="y, iy in z">
+                    <div class="y-label">
+                        {{ y_labels[iy] }}
+                    </div>
+                    <div class="col"
+                         :title="'X: ' + x_labels[ix] + ' | Y: ' + y_labels[iy] + ' | Z: ' + z_labels[iz]"
+                         v-for="x, ix in y"
+                         v-on:click="clickHandler"
+                         v-on:contextmenu.prevent="clickHandler"
+                         :data-url="'images/' + x.imgpath"
+                         :data-x="ix"
+                         :data-y="iy"
+                         :data-Z="iz"
+                         v-bind:style="{'background-image': 'url(images/' + x.imgpath + ')', 'width': 'calc(calc(100vw - var(--label-col-width)) / ' + images[0].length + ')'}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.7.13/vue.min.js" integrity="sha512-9PmLIATEd4w0OxdTHq61p12lQqa8OtDC6nXu0+S1Icb800oxoADle+gaPfmAXLa35KSvk/6bGeNRfi3nq0Hvvw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="data.js"></script>
+
+    <script>
+        var app = null;
+        window.onload = () => {
+            if (typeof xyzData !== 'function')
+            {
+                console.error('Fatal: Unable to locate function named "xyzData".');
+                return
+            }
+                        
+            const xyzd = xyzData();
+            xyzd.pageIndex = 0;
+            xyzd.prevPage = function()
+            {
+                if (this.pageIndex > 0) this.pageIndex--;
+            };
+            xyzd.nextPage = function()
+            {
+                if (this.pageIndex < (this.images.length - 1)) this.pageIndex++;
+            }
+
+            // Preload
+            let images = [];
+            for (let z = 0; z < xyzd.images.length; z++)
+                for (let y = 0; y < xyzd.images[z].length; y++)
+                    for (let x = 0; x < xyzd.images[z][y].length; x++)
+                        images.push(new Image().src = `images/image-${z}-${y}-${x}.png`);
+                     
+            window.app = new Vue({
+                el: '#m',
+                data: xyzd,
+                methods: {
+                    scrollHandler: function(e)
+                    {
+                        if (!e) e = window.event;
+                        if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) return;
+                        
+                        if (e.deltaY < 0) this.prevPage();
+                        else if(e.deltaY > 0) this.nextPage();
+                    },
+                    keyHandler: function(e)
+                    {
+                        if (!e) e = window.event;
+                        if (e.key === 'ArrowUp' || e.key === 'PageUp') this.prevPage(); 
+                        if (e.key === 'ArrowDown' || e.key === 'PageDown') this.nextPage();
+                    },
+                    clickHandler: function(e)
+                    {
+                        if (e.button === 0) window.open(e.target.dataset['url'], '_blank');
+                        if (e.button === 2)
+                        {
+                            var infoTxt = this.images[e.target.dataset['z']][e.target.dataset['y']][e.target.dataset['x']].info;
+                            navigator.clipboard.writeText(infoTxt).then(() =>
+                            {
+                                alert('Successfully copied to clipboard:\r\n\r\n' + infoTxt);
+                            })
+                        }
+                    }
+                }
+            });
+
+            document.addEventListener('keydown', window.app.keyHandler);
+        };
+    </script>
+</body>
+</html>
