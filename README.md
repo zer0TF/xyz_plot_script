@@ -14,6 +14,16 @@ Download `xyz_grid.py` and `xyz_grid.template.html` and place it in the `/script
 
 Push the "Reload Scripts" button at the bottom of the Settings tab.
 
+### 🖌️ Optional Styling
+
+If you don't like that the Z dropdown is wider than the X and Y dropdowns, edit your `style.css` file and add this at the bottom:
+
+```css
+#z_type {
+    max-width: 10em;
+}
+```
+
 ## 🖱️ Usage
 
 Emits a folder to your samples output directory containing all of the necessary images, as well as an .html viewer file, and a .js file for metadata.
