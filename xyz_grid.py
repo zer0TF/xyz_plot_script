@@ -312,13 +312,13 @@ class Script(scripts.Script):
             return valslist
 
         try:
-            x_opt = axis_options[x_type + 1]
+            x_opt = axis_options[x_type]
             xs = process_axis(x_opt, x_values)
 
-            y_opt = axis_options[y_type + 1]
+            y_opt = axis_options[y_type]
             ys = process_axis(y_opt, y_values)
 
-            z_opt = axis_options[z_type + 1]
+            z_opt = axis_options[z_type]
             zs = process_axis(z_opt, z_values)
         except ValueError:
             state.interrupted = True
