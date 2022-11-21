@@ -12,9 +12,9 @@ import numpy as np
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import images
+from modules import images, sd_samplers
 from modules.hypernetworks import hypernetwork
-from modules.processing import StableDiffusionProcessingTxt2Img, process_images, get_correct_sampler
+from modules.processing import StableDiffusionProcessingTxt2Img, process_images
 from modules.shared import opts, state
 import modules.shared as shared
 import modules.sd_samplers
@@ -61,9 +61,9 @@ def apply_order(p, x, xs):
     p.prompt = prompt_tmp + p.prompt
     
 
-def build_samplers_dict(p):
+def build_samplers_dict():
     samplers_dict = {}
-    for i, sampler in enumerate(get_correct_sampler(p)):
+    for i, sampler in enumerate(sd_samplers.all_samplers):
         samplers_dict[sampler.name.lower()] = i
         for alias in sampler.aliases:
             samplers_dict[alias.lower()] = i
@@ -71,15 +71,15 @@ def build_samplers_dict(p):
 
 
 def apply_sampler(p, x, xs):
-    sampler_index = build_samplers_dict(p).get(x.lower(), None)
+    sampler_dict = build_samplers_dict()
+    sampler_index = sampler_dict.get(x.lower(), None)
     if sampler_index is None:
         raise RuntimeError(f"Unknown sampler: {x}")
 
-    p.sampler_index = sampler_index
-
+    p.sampler_name = sd_samplers.all_samplers[sampler_index].name
 
 def confirm_samplers(p, xs):
-    samplers_dict = build_samplers_dict(p)
+    samplers_dict = build_samplers_dict()
     for x in xs:
         if x.lower() not in samplers_dict.keys():
             raise RuntimeError(f"Unknown sampler: {x}")
@@ -250,7 +250,7 @@ re_range_count_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+
 
 class Script(scripts.Script):
     def title(self):
-        return "X/Y/Z plot"
+        return "X/Y/Z plot HTML"
 
     def ui(self, is_img2img):
         current_axis_options = [x for x in axis_options if type(x) == AxisOption or type(x) == AxisOptionImg2Img and is_img2img]
