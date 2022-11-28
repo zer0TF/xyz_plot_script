@@ -12,14 +12,15 @@ import numpy as np
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import images
+from modules import images, sd_samplers
 from modules.hypernetworks import hypernetwork
-from modules.processing import StableDiffusionProcessingTxt2Img, process_images, get_correct_sampler
-from modules.shared import opts, state
+from modules.processing import process_images, Processed, StableDiffusionProcessingTxt2Img
+from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
 import modules.sd_samplers
 import modules.sd_models
 import re
+
 
 def apply_field(field):
     def fun(p, x, xs):
@@ -32,6 +33,9 @@ def writefile(dir, fn, contents, append=False, encoding='utf8'):
         f.write(contents)
 
 def apply_prompt(p, x, xs):
+    if xs[0] not in p.prompt and xs[0] not in p.negative_prompt:
+        raise RuntimeError(f"Prompt S/R did not find {xs[0]} in prompt or negative prompt.")
+
     p.prompt = p.prompt.replace(xs[0], x)
     p.negative_prompt = p.negative_prompt.replace(xs[0], x)
 
@@ -59,29 +63,19 @@ def apply_order(p, x, xs):
         prompt_tmp += part
         prompt_tmp += x[idx]
     p.prompt = prompt_tmp + p.prompt
-    
-
-def build_samplers_dict(p):
-    samplers_dict = {}
-    for i, sampler in enumerate(get_correct_sampler(p)):
-        samplers_dict[sampler.name.lower()] = i
-        for alias in sampler.aliases:
-            samplers_dict[alias.lower()] = i
-    return samplers_dict
 
 
 def apply_sampler(p, x, xs):
-    sampler_index = build_samplers_dict(p).get(x.lower(), None)
-    if sampler_index is None:
+    sampler_name = sd_samplers.samplers_map.get(x.lower(), None)
+    if sampler_name is None:
         raise RuntimeError(f"Unknown sampler: {x}")
 
-    p.sampler_index = sampler_index
+    p.sampler_name = sampler_name
 
 
 def confirm_samplers(p, xs):
-    samplers_dict = build_samplers_dict(p)
     for x in xs:
-        if x.lower() not in samplers_dict.keys():
+        if x.lower() not in sd_samplers.samplers_map:
             raise RuntimeError(f"Unknown sampler: {x}")
 
 
@@ -124,25 +118,31 @@ def confirm_hypernetworks(p, xs):
 def apply_clip_skip(p, x, xs):
     opts.data["CLIP_stop_at_last_layers"] = x
 
+
 def format_value_add_label(p, opt, x):
     if type(x) == float:
         x = round(x, 8)
 
     return f"{opt.label}: {x}"
 
+
 def format_value(p, opt, x):
     if type(x) == float:
         x = round(x, 8)
     return x
 
+
 def format_value_join_list(p, opt, x):
     return ", ".join(x)
+
 
 def do_nothing(p, x, xs):
     pass
 
+
 def format_nothing(p, opt, x):
     return ""
+
 
 def str_permutations(x):
     """dummy function for specifying it in AxisOption's type when you want to get a list of permutations"""
@@ -150,6 +150,7 @@ def str_permutations(x):
 
 AxisOption = namedtuple("AxisOption", ["label", "type", "apply", "format_value", "confirm"])
 AxisOptionImg2Img = namedtuple("AxisOptionImg2Img", ["label", "type", "apply", "format_value", "confirm"])
+
 
 axis_options = [
     AxisOption("Nothing", str, do_nothing, format_nothing, None),
