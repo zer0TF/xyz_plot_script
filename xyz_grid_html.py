@@ -251,7 +251,7 @@ re_range_count_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+
 
 class Script(scripts.Script):
     def title(self):
-        return "X/Y/Z plot"
+        return "X/Y/Z HTML plot"
 
     def ui(self, is_img2img):
         current_axis_options = [x for x in axis_options if type(x) == AxisOption or type(x) == AxisOptionImg2Img and is_img2img]
