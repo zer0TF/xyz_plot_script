@@ -1,3 +1,11 @@
+# Archived
+
+We had a good run! But since the SD Web UI project now ships with an "XYZ Plot", I'm going to archive this repository.
+
+Following is the original README for posterity.
+
+----
+
 # xyz_plot_script
 
 XYZ Plot Script for Stable Diffusion WebUI. Because 3D is better than 2D! 😎
